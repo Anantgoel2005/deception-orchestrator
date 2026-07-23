@@ -1,67 +1,116 @@
 # Deception Orchestrator
 
-Deception Orchestrator is a self-hostable SOC analyst console for demonstrating the detection value of decoys and URL canaries. It turns safe, simulated attack activity into explainable MITRE-tagged events, alerts, and investigations—without requiring an external AI service.
+> **A self-hostable SOC analyst console for safe deception labs.**
 
-> This is a defensive training and portfolio project. Run decoys only in systems and networks you control. The default hosted deployment exposes only the authenticated dashboard and public URL-canary callback endpoint.
+Deception Orchestrator turns controlled decoy and canary activity into MITRE-tagged events, explainable alerts, and investigation timelines. It is built to demonstrate blue-team workflows without requiring a live attacker or an external LLM.
 
-## What works
+[Quick start](#quick-start) · [Demo flow](#demo-flow) · [Architecture](#architecture) · [Deployment](#deployment) · [Security boundary](#security-boundary)
 
-- Protected, single-admin dashboard with HttpOnly sessions and CSRF protection
-- Deterministic offline event scoring, MITRE mapping, alert generation, and alert deduplication
-- One-click Demo Lab: a repeatable credential-to-exfiltration chain using TEST-NET addresses
-- Analyst event feed, alert triage, and session investigation timeline
-- Real one-time URL canaries at `https://your-domain/c/<token>`
-- Optional DeepSeek enrichment; the product remains functional without it
-- Local-only Docker decoy controls; the production control plane never mounts the Docker socket
+> [!WARNING]
+> This is a defensive lab and portfolio project, not an internet-exposed honeypot platform. Run decoys only on systems and networks you own. The hosted control plane never needs Docker socket access.
+
+## What you can demonstrate
+
+| Capability | What it shows |
+| --- | --- |
+| **Protected analyst console** | Single-admin login, HttpOnly sessions, CSRF checks, rate limits, and deployment status. |
+| **Demo Lab** | A deterministic credential-to-exfiltration scenario using TEST-NET addresses. |
+| **Investigation workflow** | MITRE-tagged events, severity scoring, alert triage, and an ordered attack timeline. |
+| **URL canaries** | One-time beacon callbacks that generate a critical event and alert. |
+| **Local decoy lab** | Explicit, local-only Docker decoys with a separate log-monitor worker. |
+| **Optional AI enrichment** | DeepSeek can enrich analysis when configured; deterministic offline rules remain the default fallback. |
 
 ## Architecture
 
-```text
-Browser ──HTTPS──> Caddy / Next.js ──> FastAPI ──> PostgreSQL
-                                      └──> Redis
-Public URL canary ───────────────────> FastAPI /c/<token>
-
-Local lab only: FastAPI + worker ──Docker socket──> private decoy containers
+```mermaid
+flowchart LR
+    Analyst["Security analyst"] --> Console["Next.js analyst console"]
+    Console --> API["FastAPI control plane"]
+    API --> DB[("PostgreSQL")]
+    API --> Queue["Redis streams"]
+    Canary["URL canary callback"] --> API
+    Worker["Local lab worker"] --> API
+    Worker --> Decoys["Private Docker decoys"]
 ```
 
-## Local demo
+The public surface is limited to the authenticated dashboard and an optional URL-canary callback. Docker-managed decoys are a local-lab capability, not a hosted deployment feature.
 
-1. Copy `.env.example` to `.env`, set a unique `SECRET_KEY`, and choose `ADMIN_PASSWORD`.
-2. Start the safe control plane:
+## Quick start
 
-   ```bash
-   docker compose up --build
-   ```
+### Prerequisites
 
-3. Open `http://localhost:3000`, sign in with `ADMIN_USERNAME` and `ADMIN_PASSWORD`, then open **Demo Lab** and run the scenario.
-4. The scenario creates events and alerts, then opens the linked investigation automatically.
+- Docker Desktop or Docker Engine with Compose v2
+- A free local port `3000` for the console and `8000` for the API
 
-To enable Docker-managed decoys on a machine you control, explicitly opt in:
+### Start the safe control plane
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.lab.yml up --build
+cp .env.example .env
+# PowerShell: Copy-Item .env.example .env
+
+# Set SECRET_KEY and ADMIN_PASSWORD in .env, then:
+docker compose up --build
 ```
 
-The lab override is the only configuration that mounts the Docker socket. Do not use it on a public control-plane host.
+Open [http://localhost:3000](http://localhost:3000), then sign in with the `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`.
 
-## Hosted control plane
+The default configuration works offline. To enable DeepSeek enrichment, set:
 
-Use a Linux VPS with Docker and a domain whose A/AAAA record points to it.
+```env
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=your_key_here
+LLM_MODEL=deepseek-v4-flash
+```
 
-1. Set `DOMAIN`, `APP_BASE_URL=https://$DOMAIN`, `CANARY_BASE_URL=https://$DOMAIN`, a 32+ character `SECRET_KEY`, `ADMIN_USERNAME`, and `ADMIN_PASSWORD_HASH` in `.env`.
-2. Generate the bcrypt hash with `python -c "from passlib.context import CryptContext; print(CryptContext(schemes=['bcrypt']).hash('your-password'))"` in the backend image or an equivalent trusted environment.
-3. Run `docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build`.
-4. Verify `https://$DOMAIN/health`, sign in, generate a URL canary, and fetch its copied callback URL once. The pixel request should create a critical alert.
+## Demo flow
 
-See [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), and [security notes](docs/security.md).
+1. Open **Demo Lab** and run the safe scenario.
+2. Review the generated credential attempts, successful access, command activity, exploit attempt, and canary trip in **Events**.
+3. Open the linked **Investigation** to follow the ordered attack timeline and MITRE context.
+4. In **Alerts**, acknowledge or resolve the high-confidence findings.
+5. In **Canaries**, generate a URL beacon, copy its callback URL, and fetch it once to trigger a critical alert.
 
-## API
+The scenario uses documentation-only TEST-NET addresses and follows the same event-processing path as the decoy and canary pipelines.
 
-The protected OpenAPI UI is available at `http://localhost:8000/docs` in local development. Key routes are `POST /api/v1/auth/login`, `POST /api/v1/demo/run`, `GET /api/v1/investigations/{session_id}`, and public `GET /c/{token}`.
+## Local decoy lab
 
-## Showcase talking points
+Docker decoys are disabled by default. Enable them only on a controlled machine:
 
-- A safe demonstration does not need a live attacker: the scenario runs through the same processing path as telemetry.
-- The platform clearly separates local decoy infrastructure from its hosted control plane.
-- Every alert contains an explainable score, MITRE context, and a recommended analyst response.
-- DeepSeek is the cost-efficient optional enrichment path; offline analysis remains deterministic and testable.
+```bash
+docker compose -f docker-compose.yml -f docker-compose.lab.yml up -d --build
+```
+
+Deploy an SSH decoy from **Local Decoys**, then connect from a VM or device you control on the same lab network. The worker records the resulting connection events in the analyst console.
+
+> [!CAUTION]
+> Do not expose the included lab templates to the public internet. They are intentionally simple, use fake known credentials, and exist only to demonstrate the telemetry workflow.
+
+## Deployment
+
+The production overlay is for a **control plane plus URL-canary callbacks** on a Docker-capable Linux VPS. It does not mount the Docker socket or expose lab decoys.
+
+1. Point a domain's DNS record at the VPS.
+2. Configure `DOMAIN`, `APP_BASE_URL`, `CANARY_BASE_URL`, a 32+ character `SECRET_KEY`, `ADMIN_USERNAME`, and `ADMIN_PASSWORD_HASH`.
+3. Run:
+
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.production.yml up -d --build
+   ```
+
+4. Verify `/health`, sign in over HTTPS, generate a URL canary, and fetch its callback URL from a permitted external device.
+
+See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), and [security notes](docs/security.md) for details.
+
+## API and validation
+
+- Local OpenAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Key routes: `POST /api/v1/auth/login`, `POST /api/v1/demo/run`, `GET /api/v1/investigations/{session_id}`, and public `GET /c/{token}`
+- CI runs backend tests and a frontend production build on pushes and pull requests.
+
+## Project status
+
+This repository is portfolio-ready for demonstrating a SOC deception workflow. A company deployment would require a separate collector/agent architecture, enterprise identity/RBAC, SIEM integrations, hardened decoy templates, audit retention, and operational assurance.
+
+## License and responsible use
+
+No license is currently included. Before accepting external contributions or commercial use, add an explicit license and review the [security boundary](docs/security.md).
