@@ -1,0 +1,35 @@
+services:
+  backend:
+    environment:
+      DEPLOYMENT_MODE: production
+      APP_BASE_URL: ${APP_BASE_URL}
+      CANARY_BASE_URL: ${CANARY_BASE_URL}
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
+      SECRET_KEY: ${SECRET_KEY}
+      CORS_ORIGINS: '["${APP_BASE_URL}"]'
+      DEMO_MODE: ${DEMO_MODE:-true}
+    ports: []
+  frontend:
+    ports: []
+  worker:
+    environment:
+      DEPLOYMENT_MODE: production
+      ENABLE_LOCAL_DECOYS: "false"
+  caddy:
+    image: caddy:2.8-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN}
+    depends_on:
+      - frontend
+      - backend
+volumes:
+  caddy_data:
+  caddy_config:
