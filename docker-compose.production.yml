@@ -1,14 +1,19 @@
 services:
+  postgres:
+    ports: []
+  redis:
+    ports: []
   backend:
     environment:
       DEPLOYMENT_MODE: production
       APP_BASE_URL: ${APP_BASE_URL}
       CANARY_BASE_URL: ${CANARY_BASE_URL}
       ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_PASSWORD: ""
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH}
       SECRET_KEY: ${SECRET_KEY}
       CORS_ORIGINS: '["${APP_BASE_URL}"]'
-      DEMO_MODE: ${DEMO_MODE:-true}
+      DEMO_MODE: ${DEMO_MODE:-false}
     ports: []
   frontend:
     ports: []
@@ -28,8 +33,10 @@ services:
     environment:
       DOMAIN: ${DOMAIN}
     depends_on:
-      - frontend
-      - backend
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
 volumes:
   caddy_data:
   caddy_config:

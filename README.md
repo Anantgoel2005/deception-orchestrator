@@ -1,10 +1,15 @@
 # Deception Orchestrator
 
+[![CI](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/ci.yml/badge.svg)](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/codeql.yml/badge.svg)](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/codeql.yml)
+[![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
+[![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](frontend/package.json)
+
 > **A self-hostable SOC analyst console for safe deception labs.**
 
 Deception Orchestrator turns controlled decoy and canary activity into MITRE-tagged events, explainable alerts, and investigation timelines. It is built to demonstrate blue-team workflows without requiring a live attacker or an external LLM.
 
-[Quick start](#quick-start) · [Demo flow](#demo-flow) · [Architecture](#architecture) · [Deployment](#deployment) · [Security boundary](#security-boundary)
+[Quick start](#quick-start) · [Demo flow](#demo-flow) · [Architecture](#architecture) · [Deployment](#deployment) · [Security](docs/security.md)
 
 > [!WARNING]
 > This is a defensive lab and portfolio project, not an internet-exposed honeypot platform. Run decoys only on systems and networks you own. The hosted control plane never needs Docker socket access.
@@ -34,6 +39,16 @@ flowchart LR
 ```
 
 The public surface is limited to the authenticated dashboard and an optional URL-canary callback. Docker-managed decoys are a local-lab capability, not a hosted deployment feature.
+
+See the [architecture and trust-boundary guide](docs/architecture.md) for component responsibilities, security invariants, and deliberate limitations.
+
+## Engineering quality
+
+- **Fail-closed production configuration** validates secrets, password hashing, HTTPS URLs, session limits, and explicit CORS origins before startup.
+- **Hardened browser sessions** use HttpOnly cookies, issuer/audience-bound JWTs, CSRF protection, login throttling, and no-store API responses.
+- **Reproducible validation** runs 13 backend tests, Python dependency checks, TypeScript validation, a Next.js production build, and a production dependency audit.
+- **Supply-chain controls** pin GitHub Actions to immutable commits, run CodeQL, and schedule Dependabot updates for Python, npm, and Actions.
+- **Least-privilege deployment** runs application containers as non-root users and keeps PostgreSQL, Redis, FastAPI, and the Docker socket outside the public production surface.
 
 ## Quick start
 
@@ -99,17 +114,20 @@ The production overlay is for a **control plane plus URL-canary callbacks** on a
 
 4. Verify `/health`, sign in over HTTPS, generate a URL canary, and fetch its callback URL from a permitted external device.
 
-See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), and [security notes](docs/security.md) for details.
+See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), [architecture guide](docs/architecture.md), [security notes](docs/security.md), and [roadmap](docs/roadmap.md) for details.
 
 ## API and validation
 
 - Local OpenAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Key routes: `POST /api/v1/auth/login`, `POST /api/v1/demo/run`, `GET /api/v1/investigations/{session_id}`, and public `GET /c/{token}`
-- CI runs backend tests and a frontend production build on pushes and pull requests.
+- CI runs backend tests, dependency checks, TypeScript validation, a frontend production build, and a production npm audit on every pull request.
+- CodeQL analyzes Python and TypeScript on pull requests, pushes to `main`, and a weekly schedule.
 
 ## Project status
 
 This repository is portfolio-ready for demonstrating a SOC deception workflow. A company deployment would require a separate collector/agent architecture, enterprise identity/RBAC, SIEM integrations, hardened decoy templates, audit retention, and operational assurance.
+
+The [roadmap](docs/roadmap.md) separates portfolio-release work, operational maturity, and organizational deployment so experimental scope is not presented as production capability.
 
 ## License and responsible use
 

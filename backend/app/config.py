@@ -23,8 +23,9 @@ class Settings(BaseSettings):
 
     # ── Auth ──
     secret_key: str = ""
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    jwt_algorithm: Literal["HS256"] = "HS256"
+    jwt_issuer: str = "deception-orchestrator"
+    jwt_audience: str = "deception-orchestrator-console"
 
     # ── LLM ──
     openai_api_key: str = ""
@@ -69,20 +70,33 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
 
     def validate_runtime(self) -> None:
-        """Reject accidental production deployments with demo credentials."""
-        if self.deployment_mode != "production":
-            return
-        missing = []
+        """Reject configurations that would create an unsafe control plane."""
+        errors = []
         if len(self.secret_key) < 32:
-            missing.append("SECRET_KEY (at least 32 characters)")
+            errors.append("SECRET_KEY (at least 32 characters)")
+        if not self.admin_password_hash and not self.admin_password:
+            errors.append("ADMIN_PASSWORD_HASH or development ADMIN_PASSWORD")
+        if self.session_expire_minutes < 5 or self.session_expire_minutes > 1440:
+            errors.append("SESSION_EXPIRE_MINUTES (between 5 and 1440)")
+        if self.event_retention_days < 1:
+            errors.append("EVENT_RETENTION_DAYS (at least 1)")
+
+        if self.deployment_mode != "production":
+            if errors:
+                raise RuntimeError("Unsafe runtime configuration: " + ", ".join(errors))
+            return
+        if self.admin_password:
+            errors.append("ADMIN_PASSWORD must not be used in production")
         if not self.admin_password_hash:
-            missing.append("ADMIN_PASSWORD_HASH")
+            errors.append("ADMIN_PASSWORD_HASH")
         if not self.app_base_url.startswith("https://"):
-            missing.append("APP_BASE_URL (https)")
+            errors.append("APP_BASE_URL (https)")
         if not self.canary_base_url.startswith("https://"):
-            missing.append("CANARY_BASE_URL (https)")
-        if missing:
-            raise RuntimeError("Unsafe production configuration: " + ", ".join(missing))
+            errors.append("CANARY_BASE_URL (https)")
+        if not self.cors_origins or "*" in self.cors_origins:
+            errors.append("CORS_ORIGINS (explicit origins only)")
+        if errors:
+            raise RuntimeError("Unsafe production configuration: " + ", ".join(dict.fromkeys(errors)))
 
 
 settings = Settings()
