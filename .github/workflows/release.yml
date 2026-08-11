@@ -1,0 +1,39 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - name: Build reproducible source archives
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          mkdir dist
+          git archive --format=tar.gz --prefix="deception-orchestrator-${TAG}/" -o "dist/deception-orchestrator-${TAG}.tar.gz" "${TAG}"
+          git archive --format=zip --prefix="deception-orchestrator-${TAG}/" -o "dist/deception-orchestrator-${TAG}.zip" "${TAG}"
+          cd dist
+          sha256sum *.tar.gz *.zip > SHA256SUMS
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: >-
+          gh release create "${TAG}"
+          dist/deception-orchestrator-${TAG}.tar.gz
+          dist/deception-orchestrator-${TAG}.zip
+          dist/SHA256SUMS
+          --verify-tag
+          --generate-notes
+          --title "Deception Orchestrator ${TAG}"

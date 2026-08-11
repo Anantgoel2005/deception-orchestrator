@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/ci.yml/badge.svg)](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/codeql.yml/badge.svg)](https://github.com/Anantgoel2005/deception-orchestrator/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/Anantgoel2005/deception-orchestrator?display_name=tag)](https://github.com/Anantgoel2005/deception-orchestrator/releases)
 [![Python 3.12](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)](backend/requirements.txt)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](frontend/package.json)
 
@@ -15,6 +16,8 @@ Deception Orchestrator turns controlled decoy and canary activity into MITRE-tag
 > This is a defensive lab and portfolio project, not an internet-exposed honeypot platform. Run decoys only on systems and networks you own. The hosted control plane never needs Docker socket access.
 
 ## See it in action
+
+![Animated walkthrough of the Deception Orchestrator analyst workflow](docs/assets/demo-walkthrough.gif)
 
 | Analyst dashboard | MITRE-tagged investigation |
 | --- | --- |
@@ -122,7 +125,7 @@ The production overlay is for a **control plane plus URL-canary callbacks** on a
 
 4. Verify `/health`, sign in over HTTPS, generate a URL canary, and fetch its callback URL from a permitted external device.
 
-See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), [architecture guide](docs/architecture.md), [security notes](docs/security.md), and [roadmap](docs/roadmap.md) for details.
+See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.md), [architecture guide](docs/architecture.md), [security notes](docs/security.md), [release checklist](docs/release-checklist.md), and [roadmap](docs/roadmap.md) for details.
 
 ## API and validation
 
