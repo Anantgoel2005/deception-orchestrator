@@ -14,6 +14,14 @@ Deception Orchestrator turns controlled decoy and canary activity into MITRE-tag
 > [!WARNING]
 > This is a defensive lab and portfolio project, not an internet-exposed honeypot platform. Run decoys only on systems and networks you own. The hosted control plane never needs Docker socket access.
 
+## See it in action
+
+| Analyst dashboard | MITRE-tagged investigation |
+| --- | --- |
+| ![Deception Orchestrator dashboard showing live attack telemetry](docs/assets/dashboard.png) | ![Attack investigation showing the deterministic credential-to-exfiltration timeline](docs/assets/investigation.png) |
+
+Both views above were captured from the bundled offline demo. The workflow generates safe TEST-NET telemetry, processes it through the production event pipeline, and opens the resulting investigation automatically.
+
 ## What you can demonstrate
 
 | Capability | What it shows |
@@ -46,7 +54,7 @@ See the [architecture and trust-boundary guide](docs/architecture.md) for compon
 
 - **Fail-closed production configuration** validates secrets, password hashing, HTTPS URLs, session limits, and explicit CORS origins before startup.
 - **Hardened browser sessions** use HttpOnly cookies, issuer/audience-bound JWTs, CSRF protection, login throttling, and no-store API responses.
-- **Reproducible validation** runs 13 backend tests, Python dependency checks, TypeScript validation, a Next.js production build, and a production dependency audit.
+- **Reproducible validation** runs backend unit tests plus a real-browser analyst workflow, Python dependency checks, TypeScript validation, a Next.js production build, and a production dependency audit.
 - **Supply-chain controls** pin GitHub Actions to immutable commits, run CodeQL, and schedule Dependabot updates for Python, npm, and Actions.
 - **Least-privilege deployment** runs application containers as non-root users and keeps PostgreSQL, Redis, FastAPI, and the Docker socket outside the public production surface.
 
@@ -69,7 +77,7 @@ docker compose up --build
 
 Open [http://localhost:3000](http://localhost:3000), then sign in with the `ADMIN_USERNAME` and `ADMIN_PASSWORD` from `.env`.
 
-The default configuration works offline. To enable DeepSeek enrichment, set:
+The default configuration works offline, and the bundled demo always uses deterministic local MITRE mapping even when an external provider is configured. To enable DeepSeek enrichment for non-demo telemetry, set:
 
 ```env
 LLM_PROVIDER=deepseek
@@ -120,7 +128,7 @@ See the [deployment notes](docs/deployment.md), [demo script](docs/demo-script.m
 
 - Local OpenAPI docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Key routes: `POST /api/v1/auth/login`, `POST /api/v1/demo/run`, `GET /api/v1/investigations/{session_id}`, and public `GET /c/{token}`
-- CI runs backend tests, dependency checks, TypeScript validation, a frontend production build, and a production npm audit on every pull request.
+- CI runs backend tests, dependency checks, TypeScript validation, a frontend production build, a production npm audit, and Playwright coverage of login and the end-to-end demo investigation on every pull request.
 - CodeQL analyzes Python and TypeScript on pull requests, pushes to `main`, and a weekly schedule.
 
 ## Project status

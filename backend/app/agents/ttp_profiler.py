@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import re
-import json
 
 from app.llm.providers import get_llm
 from app.llm.prompts import MITRE_MAPPING_PROMPT
@@ -12,22 +11,18 @@ from app.utils.mitre import MITRE_TECHNIQUE_LOOKUP
 logger = logging.getLogger(__name__)
 
 
-async def classify_ttp(command_line: str, raw_log: str) -> dict:
-    llm = get_llm()
+async def classify_ttp(command_line: str, raw_log: str, *, use_llm: bool = True) -> dict:
+    """Map activity to MITRE ATT&CK, optionally bypassing external enrichment."""
+    if not use_llm:
+        return _regex_ttp_fallback(command_line, raw_log)
 
-    prompt = MITRE_MAPPING_PROMPT.format(
-        command=command_line[:1000],
-        log=raw_log[:2000],
-    )
-
+    prompt = MITRE_MAPPING_PROMPT.format(command=command_line[:1000], log=raw_log[:2000])
     try:
-        response = llm.invoke(user_prompt=prompt)
-        result = json.loads(response)
-    except (json.JSONDecodeError, Exception) as exc:
+        response = get_llm().invoke(user_prompt=prompt)
+        return json.loads(response)
+    except Exception as exc:
         logger.debug("LLM TTP classification failed, using regex fallback: %s", exc)
-        result = _regex_ttp_fallback(command_line, raw_log)
-
-    return result
+        return _regex_ttp_fallback(command_line, raw_log)
 
 
 def _regex_ttp_fallback(command_line: str, raw_log: str) -> dict:

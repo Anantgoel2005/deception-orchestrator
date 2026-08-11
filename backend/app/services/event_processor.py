@@ -9,9 +9,9 @@ from app.services.alert_engine import evaluate_event
 from app.services.event_ingestor import enrich_event
 
 
-async def process_event(db: AsyncSession, event: AttackEvent) -> None:
-    """Run the single, deterministic event pipeline used by decoys and demos."""
-    await enrich_event(event)
+async def process_event(db: AsyncSession, event: AttackEvent, *, use_llm: bool = True) -> None:
+    """Run the event pipeline, with optional external enrichment."""
+    await enrich_event(event, use_llm=use_llm)
     if event.honeypot_id:
         honeypot = await db.scalar(select(Honeypot).where(Honeypot.id == event.honeypot_id))
         if honeypot:

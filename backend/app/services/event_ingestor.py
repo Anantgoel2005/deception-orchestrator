@@ -9,12 +9,13 @@ from app.models.event import AttackEvent, EventType
 logger = logging.getLogger(__name__)
 
 
-async def enrich_event(event: AttackEvent) -> None:
+async def enrich_event(event: AttackEvent, *, use_llm: bool = True) -> None:
     try:
         if event.event_type in (EventType.COMMAND, EventType.SHELL_SPAWN):
             ttp = await classify_ttp(
                 command_line=event.raw_log or "",
                 raw_log=event.raw_log or "",
+                use_llm=use_llm,
             )
             event.mitre_technique = ttp.get("technique_id")
             event.mitre_tactic = ttp.get("tactic")

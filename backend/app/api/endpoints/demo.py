@@ -52,5 +52,6 @@ async def run_demo(
         )
         db.add(event)
         await db.flush()
-        await process_event(db, event)
+        # Portfolio demos must be fast, reproducible, offline, and free of API cost.
+        await process_event(db, event, use_llm=False)
     return DemoRunOut(session_id=session_id, events_created=len(sequence), message="Simulated attack chain ingested")
