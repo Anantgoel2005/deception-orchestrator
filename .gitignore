@@ -6,6 +6,7 @@ dist/
 build/
 .venv/
 venv/
+.test-venv/
 *.egg
 .pytest_cache/
 
@@ -14,6 +15,8 @@ node_modules/
 .next/
 out/
 *.tsbuildinfo
+playwright-report/
+test-results/
 
 # Environment
 .env
