@@ -8,8 +8,8 @@ The current release is a hardened single-admin portfolio lab. The roadmap below 
 - [x] Authenticated console with CSRF protection and bounded login throttling
 - [x] Non-root application containers and private production data services
 - [x] Backend tests, frontend type-check/build, npm audit, CodeQL, and Dependabot
-- [ ] Add real dashboard screenshots and a short recorded demo
-- [ ] Publish a tagged release with checksums and a reproducible release checklist
+- [x] Add real dashboard screenshots and a short animated walkthrough
+- [x] Automate tagged releases with checksummed archives and a reproducible release checklist
 
 ## Operational maturity
 
@@ -18,7 +18,7 @@ The current release is a hardened single-admin portfolio lab. The roadmap below 
 - [ ] Add OpenTelemetry traces, structured JSON logs, and service-level metrics
 - [ ] Add authenticated collector enrollment and key rotation
 - [ ] Add retention jobs and documented restore testing
-- [ ] Add Playwright coverage for login, demo execution, alert triage, and canary generation
+- [ ] Extend the existing login and demo Playwright coverage to alert triage and canary generation
 
 ## Organizational deployment
 
