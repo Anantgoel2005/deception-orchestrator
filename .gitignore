@@ -7,11 +7,13 @@ build/
 .venv/
 venv/
 *.egg
+.pytest_cache/
 
 # Node
 node_modules/
 .next/
 out/
+*.tsbuildinfo
 
 # Environment
 .env
